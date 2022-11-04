@@ -25,8 +25,8 @@ def parse_xml(file)
     t.search('label').map do |l|
       name = l['for']
       label = l.text
-      item[:optionName] = name
-      item[:optionLabel] = label
+      item[:optionItemName] = name
+      item[:optionItemLabel] = label
     end
     items << item
   end
@@ -35,21 +35,16 @@ def parse_xml(file)
 end
 
 # copy origin folder, and save files into input folder
-files = Dir.glob('your-orgin-folder/*')
-FileUtils.mkdir('input') unless File.exists?('input')
+files = Dir.glob('/*')
+# mkdir_p will not raise error if folder exists
+FileUtils.mkdir_p('input')
 FileUtils.cp_r(files, 'input')
-
-# replace vue files' extension to xml
-Dir['input/*.vue'].each do |f|
-  FileUtils.mv f, "input/#{File.basename(f,'.*')}.xml"
-end
 
 # Able to process multi XMl files from input folder to output folder
 json = []
-inputs = Dir['input/*.xml']
+inputs = Dir['input/*']
 
 inputs.each_with_index do |file, i|
-  # json[:id] = i
   content = File.open file 
   xml = Nokogiri::Slop content
   hash = parse_xml(xml)
@@ -58,5 +53,6 @@ inputs.each_with_index do |file, i|
 end
 
 # generate the final json file
-prettier_json = JSON.pretty_generate json
+sorted_json = json.sort { |a, b| a[:order] <=> b[:order] }
+prettier_json = JSON.pretty_generate sorted_json
 File.write("the-final.json", prettier_json)
